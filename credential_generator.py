@@ -20,7 +20,6 @@ def make_password(length: int = 16, symbols: bool = True) -> str:
     digits = string.digits
     punct = string.punctuation if symbols else ""
     alphabet = letters + digits + punct
-    # Ensure at least one from each required class
     while True:
         pwd = "".join(secrets.choice(alphabet) for _ in range(length))
         if (
