@@ -1,26 +1,3 @@
-#!/usr/bin/env python3
-
-"""
-Easy Credential Generator (interactive or file-based)
-
-Features:
-- Generates unique usernames from names (formats: first.last, f_last, simple, keep)
-- Strong random passwords with the Python 'secrets' module
-- Optional PBKDF2-SHA256 hashed passwords (standard-library only)
-- Outputs CSV or JSON
-
-Usage examples:
-  Interactive (type names one by one, press Enter on empty line to finish):
-    python credential_generator.py
-
-  From a file of names (one per line; "Full Name, email" optional):
-    python credential_generator.py --from-file names.txt --email-domain mycorp.com
-
-  Set options:
-    python credential_generator.py --format first.last --length 16 --no-symbols --no-hash --out users.csv
-
-Columns in CSV: name,username,email,password,password_hash
-"""
 import argparse
 import base64
 import csv
@@ -34,7 +11,6 @@ import sys
 import unicodedata
 from typing import List, Dict, Optional, Set, Tuple
 
-# ---------- Password utilities ----------
 
 def make_password(length: int = 16, symbols: bool = True) -> str:
     """Generate a strong random password with the requested length and complexity."""
@@ -62,8 +38,6 @@ def hash_pbkdf2(password: str, iterations: int = 200_000, salt: Optional[bytes] 
     dk = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, iterations)
     return f"pbkdf2_sha256${iterations}${base64.b64encode(salt).decode()}${base64.b64encode(dk).decode()}"
 
-# ---------- Username helpers ----------
-
 def normalize_ascii(text: str) -> str:
     """Convert to lowercase ASCII, stripping accents."""
     return unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode().lower()
@@ -72,7 +46,7 @@ def username_from_name(name: str, fmt: str = "first.last") -> str:
     name_ascii = normalize_ascii(name)
     words = re.findall(r"[a-z0-9]+", name_ascii)
     if not words:
-        # fallback to 'user' + random digits
+
         return f"user{secrets.randbelow(10_000):04}"
     first, *rest = words
     last = rest[-1] if rest else ""
@@ -86,7 +60,7 @@ def username_from_name(name: str, fmt: str = "first.last") -> str:
         base = re.sub(r"\s+", "", name_ascii)
     else:
         base = "".join(words)
-    # allow common username chars only
+
     base = re.sub(r"[^a-z0-9._-]", "", base)
     base = base.strip("._-")
     return base or f"user{secrets.randbelow(10_000):04}"
@@ -99,8 +73,6 @@ def uniquify(base: str, taken: Set[str]) -> str:
         candidate = f"{base}{i}"
     taken.add(candidate)
     return candidate
-
-# ---------- Input & Output ----------
 
 def parse_names_from_file(path: str) -> List[Tuple[str, Optional[str]]]:
     """
@@ -115,7 +87,6 @@ def parse_names_from_file(path: str) -> List[Tuple[str, Optional[str]]]:
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
-            # split by comma, but only first comma
             parts = [p.strip() for p in line.split(",", 1)]
             if len(parts) == 1:
                 out.append((parts[0], None))
@@ -191,7 +162,6 @@ def main(argv=None) -> int:
     p.add_argument("--no-hash", action="store_true", help="Do not compute PBKDF2 password hashes")
     p.add_argument("--out", default="credentials.csv", help="Output path (.csv or .json)")
     args = p.parse_args(argv)
-
     if args.length < 8:
         print("Please choose --length >= 8", file=sys.stderr)
         return 2
@@ -203,11 +173,9 @@ def main(argv=None) -> int:
         entries = parse_names_from_file(args.from_file)
     else:
         entries = prompt_names_interactive()
-
     if not entries:
         print("No names provided. Exiting.")
         return 0
-
     rows = build_credentials(
         entries=entries,
         username_format=args.format,
@@ -216,12 +184,10 @@ def main(argv=None) -> int:
         use_symbols=not args.no_symbols,
         make_hash=not args.no_hash,
     )
-
     out_path = args.out
     if out_path.lower().endswith(".json"):
         write_json(rows, out_path)
     else:
-        # default to CSV
         if not out_path.lower().endswith(".csv"):
             out_path += ".csv"
         write_csv(rows, out_path)
