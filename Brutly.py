@@ -33,9 +33,6 @@ def try_login(username, password):
         # Step 3: Check success
         return "Logout" in r.text or "My Account" in r.text
 
-# Don't forget to Delete the line Below,when push to production !!!!
-# Test credential 3z_Us3r_001, H@iyah_1200-34-123
-
 # Read usernames and passwords from file
 with open("creds.txt", "r", encoding="utf-8") as f:
     for line in f:
